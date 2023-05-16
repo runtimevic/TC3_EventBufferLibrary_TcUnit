@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_XmlPersistentEventStorage" Id="{415bbc5a-7ea8-4617-896a-299e0238dbff}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_XmlPersistentEventStorage IMPLEMENTS I_PersistentEventStorage
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="StoreEvent" Id="{84c531b4-e2f0-45fd-8194-f1da4a2ee6dc}">
+      <Declaration><![CDATA[{warning 'add method implementation '}
+METHOD StoreEvent
+VAR_INPUT
+	stEvent	: ST_Event;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Here is there XML-Writing is supposed to be done
+//Were is where the FB_XmlPersistentEventStorage se debe implementar el codigo aqui.
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

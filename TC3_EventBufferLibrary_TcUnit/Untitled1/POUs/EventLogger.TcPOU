@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="EventLogger" Id="{009a2891-b52d-4591-8173-85c001a2e54c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK EventLogger
+VAR
+	EventBuffer : ARRAY[1..MAXIMUM_SIZE_OF_EVENT_BUFFER] OF ST_Event;
+	CurrentEventBufferIndex : INT :=0;
+	
+	_PersistentEventStorage : I_PersistentEventStorage;
+END_VAR
+VAR CONSTANT
+	MAXIMUM_SIZE_OF_EVENT_BUFFER : INT := 100;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="AddEvent" Id="{35d26c76-d1b0-45be-9bc2-189c1f65df5c}">
+      <Declaration><![CDATA[(* Returns TRUE if add was succesful and FALSE if buffer is full *)
+METHOD PUBLIC AddEvent : BOOL
+VAR_INPUT
+	eEventType :E_EventType;
+	eEventSeverity: Tc3_EventLogger.TcEventSeverity;
+	nEventIdentity: UDINT;
+	sEventText: STRING(255);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT IsEventBufferFull() THEN
+	CurrentEventBufferIndex := CurrentEventBufferIndex + 1;
+	EventBuffer[CurrentEventBufferIndex].eEventType := eEventType;
+	EventBuffer[CurrentEventBufferIndex].eEventSeverity := eEventSeverity;
+	EventBuffer[CurrentEventBufferIndex].nEventIdentity := nEventIdentity;
+	EventBuffer[CurrentEventBufferIndex].sEventText := sEventText;
+	UpdateEventTimestampWithSystemTime(stEvent := EventBuffer[CurrentEventBufferIndex]);	
+//	AddEvent := TRUE;
+//ELSE
+//	AddEvent := FALSE;
+END_IF
+
+AddEvent := NOT IsEventBufferFull();
+
+//Here we want to store the event persistently
+_PersistentEventStorage.StoreEvent(EventBuffer[CurrentEventBufferIndex]);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FB_init" Id="{8f538ce4-41b4-4f61-a2e1-68ea4210d3e1}">
+      <Declaration><![CDATA[METHOD FB_init : BOOL
+VAR_INPUT
+	bInitRetains : BOOL; // if TRUE, the retain variables are initialized (warm start / cold start)
+	bInCopyCode : BOOL;  // if TRUE, the instance afterwards gets moved into the copy code (online change)
+	iPersistentEventStorage :I_PersistentEventStorage;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_PersistentEventStorage := iPersistentEventStorage; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="IsEventBufferFull" Id="{caef97e0-1154-40f2-977f-1dc855a73807}">
+      <Declaration><![CDATA[METHOD PRIVATE IsEventBufferFull : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IsEventBufferFull := (CurrentEventBufferIndex + 1) > MAXIMUM_SIZE_OF_EVENT_BUFFER;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

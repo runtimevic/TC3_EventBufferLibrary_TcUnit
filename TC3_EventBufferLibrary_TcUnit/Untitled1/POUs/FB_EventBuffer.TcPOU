@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_EventBuffer" Id="{fc7edc3a-6b53-4f61-93b5-b5acceb9556f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EventBuffer
+VAR
+	fbMemRingBuffer			: Tc2_Utilities.FB_MemRingBuffer;
+	pPointerToArrayBuffer 	: POINTER TO BYTE;
+	nSizeOfArrayBuffer    	: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="AddEvent" Id="{e8bcdda4-e48f-4d25-97a5-657ca1711103}">
+      <Declaration><![CDATA[METHOD PUBLIC AddEvent
+VAR_INPUT
+	stEvent : ST_Event;
+END_VAR
+VAR_OUTPUT
+	bOk: BOOL; //
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbMemRingBuffer.A_AddTail(pWrite  := ADR(stEvent),
+    					  cbWrite := SIZEOF(stEvent),  					
+    					  pBuffer := pPointerToArrayBuffer,
+    					  cbBuffer:= nSizeOfArrayBuffer);
+						  
+bOk:= fbMemRingBuffer.bOk;						  ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FB_init" Id="{839ef32d-5492-4105-ad3d-39bb4a144d10}">
+      <Declaration><![CDATA[METHOD FB_init : BOOL
+VAR_INPUT
+	bInitRetains : BOOL; // if TRUE, the retain variables are initialized (warm start / cold start)
+	bInCopyCode : BOOL;  // if TRUE, the instance afterwards gets moved into the copy code (online change)
+	pPointerToArrayBuffer : POINTER TO BYTE;
+	nSizeOfArrayBuffer    : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.pPointerToArrayBuffer	:= pPointerToArrayBuffer;
+THIS^.nSizeOfArrayBuffer    := nSizeOfArrayBuffer;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetAndRemoveEvent" Id="{8e5d9b42-ab09-4138-b012-5d05d3d15d04}">
+      <Declaration><![CDATA[METHOD PUBLIC GetAndRemoveEvent
+VAR_OUTPUT
+	stEvent : ST_Event;
+	bOk  : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbMemRingBuffer.A_RemoveHead (pRead  := ADR(stEvent),
+    					      cbRead := SIZEOF(stEvent),  					
+    					      pBuffer := pPointerToArrayBuffer,
+    					      cbBuffer:= nSizeOfArrayBuffer);
+						  
+bOk:= fbMemRingBuffer.bOk;	]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetNumberOfEvents" Id="{5bd8a53b-7b95-421f-b8e6-6294209c36e9}">
+      <Declaration><![CDATA[METHOD PUBLIC GetNumberOfEvents : UDINT
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetNumberOfEvents := fbMemRingBuffer.nCount;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

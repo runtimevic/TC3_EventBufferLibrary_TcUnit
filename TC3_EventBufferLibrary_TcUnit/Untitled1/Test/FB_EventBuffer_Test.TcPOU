@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_EventBuffer_Test" Id="{7951b97e-acb8-4e82-a944-b9ffcc352a6b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EventBuffer_Test EXTENDS TcUnit.FB_TestSuite
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[AddThreeEventsExceptAllToBeCorrectAndSuccessfull();
+AddFourEventsExpectAllToBeAddedExceptTheLastOne();
+AddOneEventGetTwoExpectTheSecondOneToFail();]]></ST>
+    </Implementation>
+    <Method Name="AddFourEventsExpectAllToBeAddedExceptTheLastOne" Id="{5b7210c6-709a-4f87-bc1d-f3285755b874}">
+      <Declaration><![CDATA[METHOD PRIVATE AddFourEventsExpectAllToBeAddedExceptTheLastOne
+VAR
+	ArrayBuffer : ARRAY[0..(3 * (SIZEOF(ST_Event) + 8))] OF BYTE;
+	EventBuffer : FB_EventBuffer(pPointerToArrayBuffer:= ADR(ArrayBuffer), nSizeOfArrayBuffer:= SIZEOF(ArrayBuffer));
+	
+	// Event #1
+	stEvent1: ST_Event :=	(eEventType := E_EventType.Alarm,
+							eEventSeverity:= Tc3_EventLogger.TcEventSeverity.Critical,
+							nEventIdentity:= 42,
+							sEventText:= 'Hi there!',
+							dtTimestamp:= DT#2016-01-07-06:28:11);	
+							
+	bOk 			: BOOL;								
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('AddFourEventsExpectAllToBeAddedExceptTheLastOne');
+
+// Event #1
+EventBuffer.AddEvent(stEvent:= stEvent1, bOk=> bOk);
+AssertTrue(Condition:=bOk, Message:= 'Should have been added successfully #1');
+
+// Event #2
+EventBuffer.AddEvent(stEvent:= stEvent1, bOk=> bOk);
+AssertTrue(Condition:=bOk, Message:= 'Should have been added successfully #2');
+
+// Event #3
+EventBuffer.AddEvent(stEvent:= stEvent1, bOk=> bOk);
+AssertTrue(Condition:=bOk, Message:= 'Should have been added successfully #3');
+
+// Event #4
+EventBuffer.AddEvent(stEvent:= stEvent1, bOk=> bOk);
+AssertFalse(Condition:=bOk, Message:= 'Should NOT have been added successfully');
+
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AddOneEventGetTwoExpectTheSecondOneToFail" Id="{654195c4-2be5-48ae-afca-253e1a49cd5e}">
+      <Declaration><![CDATA[METHOD PRIVATE AddOneEventGetTwoExpectTheSecondOneToFail
+VAR
+	ArrayBuffer : ARRAY[0..(3 * (SIZEOF(ST_Event) + 8))] OF BYTE;
+	EventBuffer : FB_EventBuffer(pPointerToArrayBuffer:= ADR(ArrayBuffer), nSizeOfArrayBuffer:= SIZEOF(ArrayBuffer));
+	
+	// Event #1
+	stEvent1: ST_Event :=	(eEventType := E_EventType.Alarm,
+							eEventSeverity:= Tc3_EventLogger.TcEventSeverity.Critical,
+							nEventIdentity:= 42,
+							sEventText:= 'Hi there!',
+							dtTimestamp:= DT#2016-01-07-06:28:11);	
+							
+	bOkReturn 			: BOOL;	
+	stEventReturn		: ST_Event;		
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('AddOneEventGetTwoExpectTheSecondOneToFail');
+
+// Round #1
+EventBuffer.AddEvent(stEvent:= stEvent1, bOk=> bOkReturn);
+EventBuffer.GetAndRemoveEvent(stEvent=> stEventReturn, bOk=>bOkReturn);
+AssertTrue(Condition:=bOkReturn, Message:= 'Expected OK to be true');
+
+// Round #2
+EventBuffer.GetAndRemoveEvent(stEvent=> stEventReturn, bOk=>bOkReturn);
+AssertFalse(Condition:=bOkReturn, Message:= 'Expected OK to be false');
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AddThreeEventsExceptAllToBeCorrectAndSuccessfull" Id="{8459f2cb-b308-406c-a647-e3af64299c4e}">
+      <Declaration><![CDATA[METHOD PRIVATE AddThreeEventsExceptAllToBeCorrectAndSuccessfull
+VAR
+	ArrayBuffer : ARRAY[0..(3 * (SIZEOF(ST_Event) + 8))] OF BYTE;
+	EventBuffer : FB_EventBuffer(pPointerToArrayBuffer:= ADR(ArrayBuffer), nSizeOfArrayBuffer:= SIZEOF(ArrayBuffer));
+	
+	// Event #1
+	stEvent1: ST_Event :=	(eEventType := E_EventType.Alarm,
+							eEventSeverity:= Tc3_EventLogger.TcEventSeverity.Critical,
+							nEventIdentity:= 42,
+							sEventText:= 'Hi there!',
+							dtTimestamp:= DT#2016-01-07-06:28:11);
+							
+	// Event #2
+	stEvent2: ST_Event :=	(eEventType := E_EventType.Message,
+							eEventSeverity:= Tc3_EventLogger.TcEventSeverity.Info,
+							nEventIdentity:= 43,
+							sEventText:= 'Hi there2',
+							dtTimestamp:= DT#2016-02-07-06:28:12);
+
+	// Event #3
+	stEvent3: ST_Event :=	(eEventType := E_EventType.Alarm,
+							eEventSeverity:= Tc3_EventLogger.TcEventSeverity.Error,
+							nEventIdentity:= 44,
+							sEventText:= 'Hi there3',
+							dtTimestamp:= DT#2016-03-07-06:28:13);	
+
+	bOk 			: BOOL;	
+	nNumberOfEvents	: UDINT;		
+	stEvent 		: ST_Event;			
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('AddThreeEventsExceptAllToBeCorrectAndSuccessfull');
+
+//Add Event #1
+EventBuffer.AddEvent(stEvent:= stEvent1, bOk=> bOk);
+AssertTrue(Condition:=bOk, Message:= 'Add event #1 was not OK');
+nNumberOfEvents := EventBuffer.GetNumberOfEvents();
+AssertEquals_UDINT(Expected:= 1, Actual:= nNumberOfEvents, Message:='Expected one event');
+
+//Add Event #2
+EventBuffer.AddEvent(stEvent:= stEvent2, bOk=> bOk);
+AssertTrue(Condition:=bOk, Message:= 'Add event #2 was not OK');
+nNumberOfEvents := EventBuffer.GetNumberOfEvents();
+AssertEquals_UDINT(Expected:= 2, Actual:= nNumberOfEvents, Message:='Expected two events');
+
+//Add Event #3
+EventBuffer.AddEvent(stEvent:= stEvent3, bOk=> bOk);
+AssertTrue(Condition:=bOk, Message:= 'Add event #3 was not OK');
+nNumberOfEvents := EventBuffer.GetNumberOfEvents();
+AssertEquals_UDINT(Expected:= 3, Actual:= nNumberOfEvents, Message:='Expected three events');
+
+// Read Event #1
+EventBuffer.GetAndRemoveEvent(stEvent=> stEvent, bOk=>bOk);
+AssertTrue(Condition:=bOk, Message:= 'Read of event #1 was not successful');
+AssertEquals_UDINT(Expected:= 2, Actual:= EventBuffer.GetNumberOfEvents(), Message:='Expected two events');
+AssertEquals_INT(Expected:= E_EventType.Alarm, Actual:= stEvent.eEventType, Message:='Expected event type Alarm');
+AssertEquals_INT(Expected:= TcEventSeverity.Critical, Actual:= stEvent.eEventSeverity, Message:='Expected event severity Critical');
+AssertEquals_UDINT(Expected:= 42, Actual:= stEvent.nEventIdentity, Message:='Expected event identity 42');
+AssertEquals_STRING(Expected:= 'Hi there!', Actual:= stEvent.sEventText, Message:='Expected: Hi there!');
+AssertEquals_DATE_AND_TIME(Expected:= stEvent1.dtTimestamp, Actual:= stEvent.dtTimestamp, Message:='Expected: DT#2016-01-07-06:28:11');
+
+// Read Event #2
+EventBuffer.GetAndRemoveEvent(stEvent=> stEvent, bOk=>bOk);
+AssertTrue(Condition:=bOk, Message:= 'Read of event #2 was not successful');
+AssertEquals_UDINT(Expected:= 1, Actual:= EventBuffer.GetNumberOfEvents(), Message:='Expected one events');
+AssertEquals_INT(Expected:= E_EventType.Message, Actual:= stEvent.eEventType, Message:='Expected event type Message');
+AssertEquals_INT(Expected:= TcEventSeverity.info, Actual:= stEvent.eEventSeverity, Message:='Expected event severity Info');
+AssertEquals_UDINT(Expected:= stEvent2.nEventIdentity, Actual:= stEvent.nEventIdentity, Message:='Expected event identity 43');
+AssertEquals_STRING(Expected:= 'Hi there2', Actual:= stEvent.sEventText, Message:='Expected: Hi there2');
+AssertEquals_DATE_AND_TIME(Expected:= stEvent2.dtTimestamp, Actual:= stEvent.dtTimestamp, Message:='Expected: DT#2016-02-07-06:28:12');
+
+// Read Event #3
+EventBuffer.GetAndRemoveEvent(stEvent=> stEvent, bOk=>bOk);
+AssertTrue(Condition:=bOk, Message:= 'Read of event #3 was not successful');
+AssertEquals_UDINT(Expected:= 0, Actual:= EventBuffer.GetNumberOfEvents(), Message:='Expected cero events');
+AssertEquals_INT(Expected:= E_EventType.Alarm, Actual:= stEvent.eEventType, Message:='Expected event type Alarm');
+AssertEquals_INT(Expected:= TcEventSeverity.Error, Actual:= stEvent.eEventSeverity, Message:='Expected event severity Error');
+AssertEquals_UDINT(Expected:= stEvent3.nEventIdentity, Actual:= stEvent.nEventIdentity, Message:='Expected event identity 44');
+AssertEquals_STRING(Expected:= stEvent3.sEventText, Actual:= stEvent.sEventText, Message:='Expected: Hi there3');
+AssertEquals_DATE_AND_TIME(Expected:= stEvent3.dtTimestamp, Actual:= stEvent.dtTimestamp, Message:='Expected: DT#2016-03-07-06:28:13');
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

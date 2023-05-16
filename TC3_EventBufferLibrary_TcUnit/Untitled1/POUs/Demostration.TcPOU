@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Demostration" Id="{63b3bb6e-fddf-4a93-8f5b-c88e1ed919fb}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM Demostration
+VAR
+	bBoolean : BOOL := FALSE;
+	
+	// Event #1
+	eEventType1 :E_EventType := E_EventType.Alarm;
+	eEventSeverity1: Tc3_EventLogger.TcEventSeverity := Tc3_EventLogger.TcEventSeverity.Error;
+	nEventIdentity1: UDINT := 42;
+	sEventText1: STRING(255) := 'this is a scary event #1';
+	
+	// Event #2
+	eEventType2 :E_EventType := E_EventType.Alarm;
+	eEventSeverity2: Tc3_EventLogger.TcEventSeverity := Tc3_EventLogger.TcEventSeverity.Error;
+	nEventIdentity2: UDINT := 43;
+	sEventText2: STRING(255) := 'this is a scary event #2';
+	
+	// Event #3
+	eEventType3 :E_EventType := E_EventType.Alarm;
+	eEventSeverity3: Tc3_EventLogger.TcEventSeverity := Tc3_EventLogger.TcEventSeverity.Error;
+	nEventIdentity3: UDINT := 44;
+	sEventText3: STRING(255) := 'this is a scary event #3';	
+	
+	
+	BufferArray : ARRAY[0..(nMAXIMUM_NUMBER_OF_EVENTS * (SIZEOF(ST_Event) + nMEMORY_RING_BUFFER_INTERNAL_EXTRA_SPACING))] OF BYTE;
+	fbEventBuffer : FB_EventBuffer(ADR(BufferArray),SIZEOF(BufferArray));	
+	fbXmlPersistentEventStorage : FB_XmlPersistentEventStorage;	
+	fbCsvPersistentEventStorage : FB_CsvPersistentEventStorage(fbEventBuffer);
+//	EventLogger : EventLogger(fbXmlPersistentEventStorage);
+	EventLogger : EventLogger(fbCsvPersistentEventStorage);
+END_VAR
+VAR CONSTANT
+	nMAXIMUM_NUMBER_OF_EVENTS : UDINT := 10; 
+	nMEMORY_RING_BUFFER_INTERNAL_EXTRA_SPACING : UDINT := 8;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bBoolean THEN
+	EventLogger.AddEvent(eEventType1, eEventSeverity1, nEventIdentity1, sEventText1);
+	EventLogger.AddEvent(eEventType2, eEventSeverity2, nEventIdentity2, sEventText2);
+	EventLogger.AddEvent(eEventType3, eEventSeverity3, nEventIdentity3, sEventText3);
+//	EventLogger.AddEvent(eEventType1, eEventSeverity1, nEventIdentity1, sEventText1);
+	bBoolean := FALSE;
+END_IF
+
+fbCsvPersistentEventStorage();]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
